@@ -14,14 +14,13 @@ type FoxState = "run-right" | "run-left";
 // ============================================================================
 
 // Import sprite sheet
-import foxSpriteSheet from "./Cat/Fox Sprite Sheet.png";
+import foxSpriteSheet from "./Cat/Fox Sprite Sheet Run.png";
 
-// Sprite frame configuration for Fox (using 4th row)
+// Sprite frame configuration for Fox (single row)
 const SPRITE_CONFIG = {
   frameWidth: 32,
   frameHeight: 32,
   runFrameCount: 6,
-  rowIndex: 3, // 4th row (0-indexed)
   scale: 3, // Visual scale factor
 };
 
@@ -50,16 +49,16 @@ const FOX_STYLES = `
     background-repeat: no-repeat;
     background-image: url('${foxSpriteSheet}');
     
-    /* Run Animation - 6 frames, 4th horizontal row */
+    /* Run Animation - 6 frames, single horizontal row */
     animation: fox-run-anim 0.6s steps(${SPRITE_CONFIG.runFrameCount}) infinite;
   }
 
   @keyframes fox-run-anim {
     from {
-      background-position: 0 -${SPRITE_CONFIG.rowIndex * SPRITE_CONFIG.frameHeight}px;
+      background-position: 0 0;
     }
     to {
-      background-position: -${SPRITE_CONFIG.frameWidth * SPRITE_CONFIG.runFrameCount}px -${SPRITE_CONFIG.rowIndex * SPRITE_CONFIG.frameHeight}px;
+      background-position: -${SPRITE_CONFIG.frameWidth * SPRITE_CONFIG.runFrameCount}px 0;
     }
   }
 
