@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import type { AnimalType } from './AnimalSelect';
 import CatDisplay from './CatDisplay';
 import FoxDisplay from './FoxDisplay';
+import grassSvg from '../../assets/grass.svg';
 
 interface TimerActiveProps {
   animal: AnimalType;
@@ -58,9 +59,12 @@ const TimerActive = ({ animal, initialSeconds, onReset }: TimerActiveProps) => {
           <p className="pixel-text">Your {animal} companion has arrived!</p>
         </div>
         
-        {/* Show animated sprite */}
-        <div className="mb-4">
-          {animal === 'cat' ? <CatDisplay /> : <FoxDisplay />}
+        {/* Animal with Grass Background */}
+        <div className="pixel-animal-scene mb-4">
+          <div className="pixel-animal-container">
+            {animal === 'cat' ? <CatDisplay /> : <FoxDisplay />}
+          </div>
+          <img src={grassSvg} alt="grass" className="pixel-grass" />
         </div>
         
         <button onClick={onReset} className="pixel-button-primary w-full">
@@ -91,9 +95,12 @@ const TimerActive = ({ animal, initialSeconds, onReset }: TimerActiveProps) => {
         <div className="pixel-timer-number">{formatTime(countdown)}</div>
       </div>
 
-      {/* Small preview of the animal */}
-      <div className="mb-4 opacity-50" style={{ transform: 'scale(0.7)', transformOrigin: 'center' }}>
-        {animal === 'cat' ? <CatDisplay /> : <FoxDisplay />}
+      {/* Animal with Grass Background */}
+      <div className="pixel-animal-scene mb-4">
+        <div className="pixel-animal-container" style={{ transform: 'scale(0.7)', opacity: 0.5 }}>
+          {animal === 'cat' ? <CatDisplay /> : <FoxDisplay />}
+        </div>
+        <img src={grassSvg} alt="grass" className="pixel-grass" style={{ opacity: 0.5 }} />
       </div>
 
       {/* Cancel Button */}

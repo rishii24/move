@@ -60,17 +60,16 @@ const TimeSelectPixel = ({ onTimeSet }: TimeSelectPixelProps) => {
 
   return (
     <div className="pixel-container">
-      <h2 className="pixel-heading mb-6">Set Timer</h2>
+      <h2 className="pixel-heading mb-4">Set Timer</h2>
       
       {/* Preset Options */}
-      <div className="mb-6">
-        <h3 className="pixel-subheading mb-3">Quick Select</h3>
-        <div className="grid grid-cols-3 gap-3">
+      <div className="mb-4">
+        <div className="grid grid-cols-3 gap-2">
           {presets.map((preset) => (
             <button
               key={preset.value}
               onClick={() => handlePresetClick(preset.value)}
-              className={`pixel-button ${
+              className={`pixel-button text-xs ${
                 selectedPreset === preset.value && !isCustom
                   ? 'pixel-button-selected'
                   : ''
@@ -83,15 +82,14 @@ const TimeSelectPixel = ({ onTimeSet }: TimeSelectPixelProps) => {
       </div>
 
       {/* Custom Time */}
-      <div className="mb-6">
-        <h3 className="pixel-subheading mb-3">Custom Time</h3>
-        <div className="flex gap-3">
+      <div className="mb-4">
+        <div className="flex gap-2">
           <input
             type="number"
             min="1"
             value={customValue}
             onChange={(e) => handleCustomChange(e.target.value)}
-            placeholder="Enter time"
+            placeholder="Time"
             className="pixel-input flex-1"
           />
           <select
@@ -99,8 +97,8 @@ const TimeSelectPixel = ({ onTimeSet }: TimeSelectPixelProps) => {
             onChange={(e) => setCustomUnit(e.target.value as 'seconds' | 'minutes')}
             className="pixel-select"
           >
-            <option value="seconds">Seconds</option>
-            <option value="minutes">Minutes</option>
+            <option value="seconds">Sec</option>
+            <option value="minutes">Min</option>
           </select>
         </div>
       </div>
@@ -109,23 +107,14 @@ const TimeSelectPixel = ({ onTimeSet }: TimeSelectPixelProps) => {
       <button
         onClick={handleSetTimer}
         disabled={!getSelectedTime()}
-        className={`pixel-button-primary w-full ${
+        className={`pixel-button-primary w-full text-xs ${
           !getSelectedTime() ? 'opacity-50 cursor-not-allowed' : ''
         }`}
       >
         {getSelectedTime() 
-          ? `Set Timer: ${formatTime(getSelectedTime()!)}` 
-          : 'Select Time First'}
+          ? `Set: ${formatTime(getSelectedTime()!)}` 
+          : 'Select Time'}
       </button>
-
-      {/* Preview */}
-      {getSelectedTime() && (
-        <div className="mt-4 pixel-info-box">
-          <p className="pixel-text-sm text-center">
-            ⏰ Timer will trigger in <span className="font-bold">{formatTime(getSelectedTime()!)}</span>
-          </p>
-        </div>
-      )}
     </div>
   );
 };
