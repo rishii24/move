@@ -1,86 +1,177 @@
 console.log('Background service worker running');
 
-// Store the selected animal type
-let selectedAnimal: 'cat' | 'fox' = 'cat';
+// Types
+interface PetState {
+  isActive: boolean;
+  animal: 'cat' | 'fox';
+  intervalMinutes: number;
+  nextTriggerTime: number;
+}
+
+// Initialize state from storage
+const initialState: PetState = {
+  isActive: false,
+  animal: 'cat',
+  intervalMinutes: 0,
+  nextTriggerTime: 0
+};
+
+const getState = async (): Promise<PetState> => {
+  const data = await chrome.storage.local.get(['petState']);
+  return (data.petState as PetState) || initialState;
+};
+
+// Helper: Save state
+const saveState = async (state: Partial<PetState>) => {
+  const current = await getState();
+  await chrome.storage.local.set({
+    petState: { ...current, ...state }
+  });
+};
 
 // Handle extension installation
 chrome.runtime.onInstalled.addListener(() => {
   console.log('Extension installed');
 });
 
-// Listen for reminder requests from popup
+// Listener for messages
 chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
   console.log('Message received:', message);
 
+  handleMessage(message).then(sendResponse);
+  return true; // Keep channel open
+});
+
+async function handleMessage(message: any) {
   if (message.type === 'SET_REMINDER') {
     const seconds = message.seconds || (message.minutes ? message.minutes * 60 : 0);
+    const minutes = Math.max(seconds / 60, 0.016); // Allow small values for testing (e.g. 5s = 0.083m)
     const animal = message.animal || 'cat';
-    selectedAnimal = animal;
-    
-    const alarmName = 'petReminder';
 
-    // Clear any existing alarm
-    chrome.alarms.clear(alarmName, (wasCleared) => {
-      console.log(`Previous alarm cleared: ${wasCleared}`);
+    // Clear old alarm
+    await chrome.alarms.clear('petReminder');
+    await chrome.alarms.clear('petSnooze');
+
+    // Set new recurring alarm
+    chrome.alarms.create('petReminder', {
+      delayInMinutes: minutes,
+      periodInMinutes: minutes
     });
 
-    // Convert seconds to minutes for Chrome alarms API
-    const minutes = seconds / 60;
-    
-    chrome.alarms.create(alarmName, {
-      delayInMinutes: Math.max(minutes, 0.016) // Minimum ~1 second
+    // Update global state
+    await saveState({
+      isActive: true,
+      animal: animal,
+      intervalMinutes: minutes,
+      nextTriggerTime: Date.now() + (minutes * 60 * 1000)
     });
 
-    console.log(`⏰ Alarm set for ${seconds} seconds with ${animal}`);
-    sendResponse({ success: true });
+    console.log(`⏰ Recurring alarm set every ${minutes} minutes`);
+    return { success: true };
   }
 
-  return true; // Keep message channel open for async response
-});
+  if (message.type === 'GET_STATUS') {
+    const state = await getState();
+    return { state };
+  }
 
-// Listen for alarm triggers
-chrome.alarms.onAlarm.addListener((alarm) => {
+  if (message.type === 'ACKNOWLEDGE_REMINDER') {
+    // Acknowledge: Just dismiss the current pet, recurring alarm continues
+    await broadcastMessage({ type: 'DISMISS_PET' });
+    console.log('Pet acknowledged - recurring alarm continues normally');
+    return { success: true };
+  }
+
+  if (message.type === 'SNOOZE_REMINDER') {
+    // Snooze: Temporarily pause recurring alarm, create snooze alarm
+    // Dismiss current pet
+    await broadcastMessage({ type: 'DISMISS_PET' });
+
+    // Clear the recurring alarm temporarily
+    await chrome.alarms.clear('petReminder');
+
+    // Create a one-off snooze alarm (5 minutes)
+    const snoozeMinutes = 5;
+    chrome.alarms.create('petSnooze', {
+      delayInMinutes: snoozeMinutes
+    });
+
+    // Update next trigger time
+    await saveState({
+      nextTriggerTime: Date.now() + (snoozeMinutes * 60 * 1000)
+    });
+
+    console.log(`Pet snoozed for ${snoozeMinutes} minutes - will restore recurring alarm after`);
+    return { success: true };
+  }
+
+  if (message.type === 'CANCEL_TIMER') {
+    // Cancel: Stop EVERYTHING
+    await chrome.alarms.clear('petReminder');
+    await chrome.alarms.clear('petSnooze');
+    await saveState({ isActive: false, nextTriggerTime: 0 });
+    await broadcastMessage({ type: 'DISMISS_PET' });
+    console.log('All alarms cancelled');
+    return { success: true };
+  }
+
+  if (message.type === 'STOP_REMINDER') {
+    // Stop: Dismiss current pet (for backward compatibility)
+    await broadcastMessage({ type: 'DISMISS_PET' });
+    return { success: true };
+  }
+}
+
+// Alarm Trigger
+chrome.alarms.onAlarm.addListener(async (alarm) => {
   console.log('⏰ Alarm triggered:', alarm.name);
+  const state = await getState();
 
   if (alarm.name === 'petReminder') {
-    const messageType = selectedAnimal === 'fox' ? 'TRIGGER_FOX_REMINDER' : 'TRIGGER_CAT_REMINDER';
-    
-    console.log(`🚀 Attempting to send ${messageType} to all tabs...`);
-    
-    // Query all tabs to trigger the appropriate pet
-    chrome.tabs.query({}, (tabs) => {
-      console.log(`📊 Found ${tabs.length} tabs`);
-      
-      let sentCount = 0;
-      let errorCount = 0;
-      
-      tabs.forEach((tab) => {
-        console.log(`📄 Tab ${tab.id}: ${tab.url?.substring(0, 50)}...`);
-        
-        if (tab.id && tab.url && !tab.url.startsWith('chrome://') && !tab.url.startsWith('chrome-extension://')) {
-          // Try to send message
-          chrome.tabs.sendMessage(tab.id, {
-            type: messageType,
-            animal: selectedAnimal
-          }).then(() => {
-            sentCount++;
-            console.log(`✅ Message sent to tab ${tab.id} (${tab.url?.substring(0, 30)}...)`);
-          }).catch((error) => {
-            errorCount++;
-            console.log(`⚠️ Could not send to tab ${tab.id}:`, error.message);
-            console.log(`   URL: ${tab.url}`);
-            console.log(`   💡 Tip: Refresh this tab or open a new one`);
-          });
-        } else {
-          console.log(`⏭️ Skipping tab ${tab.id} (chrome:// or extension page)`);
-        }
+    // Regular recurring alarm
+    if (state.intervalMinutes) {
+      await saveState({
+        nextTriggerTime: Date.now() + (state.intervalMinutes * 60 * 1000)
       });
-      
-      setTimeout(() => {
-        console.log(`\n📈 Summary: Sent to ${sentCount} tabs, ${errorCount} errors`);
-      }, 500);
-    });
+    }
+    triggerPet(state.animal);
+  }
 
-    console.log(`✅ ${selectedAnimal === 'fox' ? 'Fox' : 'Cat'} reminder triggered`);
+  if (alarm.name === 'petSnooze') {
+    // Snooze alarm fired - restore the recurring alarm
+    console.log('Snooze ended - restoring recurring alarm');
+
+    if (state.intervalMinutes) {
+      // Recreate the recurring alarm
+      chrome.alarms.create('petReminder', {
+        delayInMinutes: state.intervalMinutes,
+        periodInMinutes: state.intervalMinutes
+      });
+
+      // Update next trigger time
+      await saveState({
+        nextTriggerTime: Date.now() + (state.intervalMinutes * 60 * 1000)
+      });
+    }
+
+    // Trigger the pet now (after snooze)
+    triggerPet(state.animal);
   }
 });
+
+async function triggerPet(animal: string) {
+  const messageType = animal === 'fox' ? 'TRIGGER_FOX_REMINDER' : 'TRIGGER_CAT_REMINDER';
+  console.log(`🚀 Sending ${messageType} to all tabs...`);
+  await broadcastMessage({ type: messageType, animal });
+}
+
+async function broadcastMessage(msg: any) {
+  const tabs = await chrome.tabs.query({});
+  for (const tab of tabs) {
+    if (tab.id && tab.url && !tab.url.startsWith('chrome://')) {
+      chrome.tabs.sendMessage(tab.id, msg).catch(() => {
+        // Tab might be inactive or not loaded content script
+      });
+    }
+  }
+}

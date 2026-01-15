@@ -6,32 +6,26 @@ import grassSvg from '../../assets/grass.svg';
 
 interface TimerActiveProps {
   animal: AnimalType;
-  initialSeconds: number;
-  onReset: () => void;
+  nextTriggerTime: number;
+  onCancel: () => void;
 }
 
-const TimerActive = ({ animal, initialSeconds, onReset }: TimerActiveProps) => {
-  const [countdown, setCountdown] = useState(initialSeconds);
-  const [isComplete, setIsComplete] = useState(false);
+const TimerActive = ({ animal, nextTriggerTime, onCancel }: TimerActiveProps) => {
+  const [secondsRemaining, setSecondsRemaining] = useState(0);
 
   useEffect(() => {
-    if (countdown <= 0) {
-      setIsComplete(true);
-      return;
-    }
+    const updateTime = () => {
+      const now = Date.now();
+      const remaining = Math.max(0, Math.ceil((nextTriggerTime - now) / 1000));
+      setSecondsRemaining(remaining);
+    };
 
-    const interval = setInterval(() => {
-      setCountdown((prev) => {
-        if (prev <= 1) {
-          setIsComplete(true);
-          return 0;
-        }
-        return prev - 1;
-      });
-    }, 1000);
+    updateTime(); // Initial Update
+
+    const interval = setInterval(updateTime, 1000);
 
     return () => clearInterval(interval);
-  }, [countdown]);
+  }, [nextTriggerTime]);
 
   const formatTime = (seconds: number): string => {
     if (seconds < 60) {
@@ -47,66 +41,46 @@ const TimerActive = ({ animal, initialSeconds, onReset }: TimerActiveProps) => {
     return `${hours}h ${remainMins}m`;
   };
 
-  const getProgressPercentage = () => {
-    return ((initialSeconds - countdown) / initialSeconds) * 100;
-  };
-
-  if (isComplete) {
-    return (
-      <div className="pixel-container">
-        <div className="pixel-success-box mb-4 text-center">
-          <h2 className="pixel-heading mb-2">Time's Up!</h2>
-          <p className="pixel-text">Your {animal} companion has arrived!</p>
-        </div>
-        
-        {/* Animal with Grass Background */}
-        <div className="pixel-animal-scene mb-4">
-          <div className="pixel-animal-container">
-            {animal === 'cat' ? <CatDisplay /> : <FoxDisplay />}
-          </div>
-          <img src={grassSvg} alt="grass" className="pixel-grass" />
-        </div>
-        
-        <button onClick={onReset} className="pixel-button-primary w-full">
-          Set New Timer
-        </button>
-      </div>
-    );
-  }
-
   return (
     <div className="pixel-container">
       <div className="text-center mb-4">
-        <h2 className="pixel-heading mb-2">Timer Active</h2>
-        <p className="pixel-text-sm opacity-80">Your {animal} is on the way...</p>
-      </div>
-
-      {/* Progress Bar */}
-      <div className="pixel-progress-container mb-4">
-        <div 
-          className="pixel-progress-bar"
-          style={{ width: `${getProgressPercentage()}%` }}
-        />
+        <h2 className="pixel-heading mb-2">Active Monitor</h2>
+        <p className="pixel-text-sm opacity-80">
+          {secondsRemaining <= 0 ? (
+            <span className="text-green-600 font-bold">INTERVAL ACTIVE</span>
+          ) : (
+            `Next ${animal} in:`
+          )}
+        </p>
       </div>
 
       {/* Countdown Display */}
       <div className="pixel-timer-display mb-4">
-        <div className="pixel-text-sm mb-1">Time Remaining</div>
-        <div className="pixel-timer-number">{formatTime(countdown)}</div>
+        {secondsRemaining > 0 ? (
+          <div className="pixel-timer-number">{formatTime(secondsRemaining)}</div>
+        ) : (
+          <div className="pixel-text text-xs">Pet should be visiting!</div>
+        )}
       </div>
 
       {/* Animal with Grass Background */}
       <div className="pixel-animal-scene mb-4">
-        <div className="pixel-animal-container" style={{ transform: 'scale(0.7)', opacity: 0.5 }}>
+        <div className="pixel-animal-container" style={{ transform: 'scale(0.8)' }}>
           {animal === 'cat' ? <CatDisplay /> : <FoxDisplay />}
         </div>
-        <img src={grassSvg} alt="grass" className="pixel-grass" style={{ opacity: 0.5 }} />
+        <img src={grassSvg} alt="grass" className="pixel-grass" />
       </div>
 
       {/* Cancel Button */}
-      <button onClick={onReset} className="pixel-button-secondary w-full">
-        Cancel Timer
-      </button>
+      <div className="flex flex-col gap-2 w-full">
+        <button onClick={onCancel} className="pixel-button-secondary w-full">
+          Stop Recurring Timer
+        </button>
+      </div>
+
+      <p className="text-[10px] text-center mt-2 opacity-60">
+        Pet will appear on all tabs every interval.
+      </p>
     </div>
   );
 };
