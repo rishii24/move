@@ -1,8 +1,5 @@
 import { useState, useEffect } from 'react';
 import type { AnimalType } from './AnimalSelect';
-import CatDisplay from './CatDisplay';
-import FoxDisplay from './FoxDisplay';
-import grassSvg from '../../assets/grass.svg';
 
 interface TimerActiveProps {
   animal: AnimalType;
@@ -43,44 +40,28 @@ const TimerActive = ({ animal, nextTriggerTime, onCancel }: TimerActiveProps) =>
 
   return (
     <div className="pixel-container">
-      <div className="text-center mb-4">
-        <h2 className="pixel-heading mb-2">Active Monitor</h2>
-        <p className="pixel-text-sm opacity-80">
+      {/* Speech Bubble Status */}
+      <div className="pixel-speech-bubble">
+        <p className="pixel-speech-text">
           {secondsRemaining <= 0 ? (
-            <span className="text-green-600 font-bold">INTERVAL ACTIVE</span>
+            <span>Interval Active! 🎉</span>
           ) : (
-            `Next ${animal} in:`
+            `Next ${animal} in: ${formatTime(secondsRemaining)}`
           )}
         </p>
       </div>
 
-      {/* Countdown Display */}
-      <div className="pixel-timer-display mb-4">
-        {secondsRemaining > 0 ? (
-          <div className="pixel-timer-number">{formatTime(secondsRemaining)}</div>
-        ) : (
-          <div className="pixel-text text-xs">Pet should be visiting!</div>
-        )}
-      </div>
-
-      {/* Animal with Grass Background */}
-      <div className="pixel-animal-scene mb-4">
-        <div className="pixel-animal-container" style={{ transform: 'scale(0.8)' }}>
-          {animal === 'cat' ? <CatDisplay /> : <FoxDisplay />}
-        </div>
-        <img src={grassSvg} alt="grass" className="pixel-grass" />
+      {/* Status Info */}
+      <div className="pixel-info-box mb-4">
+        <p className="pixel-text-sm text-center">
+          Your {animal} will appear on all tabs every interval.
+        </p>
       </div>
 
       {/* Cancel Button */}
-      <div className="flex flex-col gap-2 w-full">
-        <button onClick={onCancel} className="pixel-button-secondary w-full">
-          Stop Recurring Timer
-        </button>
-      </div>
-
-      <p className="text-[10px] text-center mt-2 opacity-60">
-        Pet will appear on all tabs every interval.
-      </p>
+      <button onClick={onCancel} className="pixel-button-beige w-full">
+        Stop Recurring Timer
+      </button>
     </div>
   );
 };

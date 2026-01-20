@@ -125,7 +125,7 @@ function App() {
           />
           <button
             onClick={handleContinueToTime}
-            className="pixel-button-primary w-full"
+            className="pixel-button-gold w-full"
           >
             Continue →
           </button>
@@ -137,7 +137,7 @@ function App() {
           <TimeSelectPixel onTimeSet={handleTimeSet} />
           <button
             onClick={handleBackToAnimal}
-            className="pixel-button-secondary w-full"
+            className="pixel-button-beige w-full"
           >
             ← Back
           </button>

@@ -64,10 +64,12 @@ const TimeSelectPixel = ({ onTimeSet }: TimeSelectPixelProps) => {
 
   return (
     <div className="pixel-container">
-      <h2 className="pixel-heading mb-4">Set Interval</h2>
-      <p className="pixel-text-sm mb-4 text-center opacity-70">
-        Choose how often your pet visits
-      </p>
+      {/* Speech Bubble Heading */}
+      <div className="pixel-speech-bubble">
+        <p className="pixel-speech-text">
+          Set Your Reminder Interval!
+        </p>
+      </div>
 
       {/* Preset Options */}
       <div className="mb-4">
@@ -76,9 +78,9 @@ const TimeSelectPixel = ({ onTimeSet }: TimeSelectPixelProps) => {
             <button
               key={preset.value}
               onClick={() => handlePresetClick(preset.value)}
-              className={`pixel-button text-xs ${selectedPreset === preset.value && !isCustom
-                  ? 'pixel-button-selected'
-                  : ''
+              className={`text-xs ${selectedPreset === preset.value && !isCustom
+                  ? 'pixel-button-gold'
+                  : 'pixel-button-beige'
                 }`}
             >
               {preset.label}

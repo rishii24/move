@@ -8,14 +8,14 @@ interface AnimalSelectProps {
 }
 
 const animals = [
-  { 
-    id: 'cat' as AnimalType, 
+  {
+    id: 'cat' as AnimalType,
     name: 'Cat',
     emoji: '🐱',
     description: 'Playful & Curious'
   },
-  { 
-    id: 'fox' as AnimalType, 
+  {
+    id: 'fox' as AnimalType,
     name: 'Fox',
     emoji: '🦊',
     description: 'Swift & Clever'
@@ -27,8 +27,13 @@ const AnimalSelect = ({ onSelect, selectedAnimal }: AnimalSelectProps) => {
 
   return (
     <div className="pixel-container">
-      <h2 className="pixel-heading mb-4">Choose Your Companion</h2>
-      
+      {/* Speech Bubble Heading */}
+      <div className="pixel-speech-bubble">
+        <p className="pixel-speech-text">
+          Choose Your Companion!
+        </p>
+      </div>
+
       <div className="grid grid-cols-2 gap-3">
         {animals.map((animal) => (
           <button
@@ -36,22 +41,22 @@ const AnimalSelect = ({ onSelect, selectedAnimal }: AnimalSelectProps) => {
             onClick={() => onSelect(animal.id)}
             onMouseEnter={() => setHoveredAnimal(animal.id)}
             onMouseLeave={() => setHoveredAnimal(null)}
-            className={`pixel-card ${
-              selectedAnimal === animal.id 
-                ? 'pixel-card-selected' 
+            className={`pixel-card ${selectedAnimal === animal.id
+                ? 'pixel-card-selected'
                 : hoveredAnimal === animal.id
-                ? 'pixel-card-hover'
-                : ''
-            }`}
+                  ? 'pixel-card-hover'
+                  : ''
+              }`}
           >
-            <div className="text-4xl mb-2 transition-transform duration-200" 
-                 style={{ 
-                   transform: selectedAnimal === animal.id ? 'scale(1.2)' : 'scale(1)',
-                   imageRendering: 'pixelated'
-                 }}>
+            <div className="text-4xl mb-2 transition-transform duration-200"
+              style={{
+                transform: selectedAnimal === animal.id ? 'scale(1.2)' : 'scale(1)',
+                imageRendering: 'pixelated'
+              }}>
               {animal.emoji}
             </div>
             <div className="pixel-text-lg font-bold">{animal.name}</div>
+            <div className="pixel-text-sm opacity-70 mt-1">{animal.description}</div>
           </button>
         ))}
       </div>
